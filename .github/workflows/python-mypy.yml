@@ -1,5 +1,5 @@
 ---
-name: mypy
+name: Python Linting - mypy
 
 "on":
   push:
