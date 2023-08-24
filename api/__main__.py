@@ -41,8 +41,10 @@ def filter_dict(input_dict, fields_to_keep):
 
 
 HOST = socket.gethostname()
-if not os.getenv("API_KEY"):
-    logger.error("Please make sure you have an environment variable called API_KEY")
+if not os.getenv("API_KEY") and not os.path.isfile(".env"):
+    logger.error(
+        "Please ensure you have environment variable API_KEY, or a .env file for it."
+    )
     sys.exit(1)
 settings = Settings()
 app = FastAPI()
