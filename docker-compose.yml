@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+
+  api:
+    build: ./api
+    command: uvicorn app.main:app --host 0.0.0.0
+    expose:
+      - 8000:8000
+    # Expose ports to the host - not necessary if proxying by another service i.e. caddy
+    ports:
+      - 8000:8000
+
+    env_file:
+      - ./.env
+
+  # Caddy as a reverse proxy for 443 (TLS) -> 8000
+  # Will not run by default - use '--profile use_caddy up' to run it
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    # Expose ports 80 and 443 for TLS cert registration - and 443 for the API
+    ports:
+      - "443:443"
+      - "80:80"
+    profiles:
+      - use_caddy
+    volumes:
+      - ./caddy/data/:/data/
+      - ./caddy/config/:/config/
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
