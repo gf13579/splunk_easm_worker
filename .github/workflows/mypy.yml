@@ -22,5 +22,5 @@ jobs:
         run: |
           python --version
           pip install -r api/requirements.txt
-          pip install mypy
+          pip install mypy types-requests
           mypy api/*.py

@@ -57,5 +57,5 @@ COPY ./subfinder-provider-config.yaml /root/.config/subfinder/provider-config.ya
 WORKDIR /code
 COPY ./requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-COPY ./ /code/app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+COPY ./ /code/api
+CMD ["uvicorn", "api.__main__:app", "--host", "0.0.0.0", "--port", "80"]
