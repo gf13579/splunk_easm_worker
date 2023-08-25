@@ -3,7 +3,7 @@ anyio==3.7.1
 certifi==2023.5.7
 charset-normalizer==3.2.0
 click==8.1.4
-fastapi==0.100.0
+fastapi==0.101.1
 h11==0.14.0
 httptools==0.6.0
 idna==3.4
