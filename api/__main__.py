@@ -41,6 +41,11 @@ def filter_dict(input_dict, fields_to_keep):
 
 
 HOST = socket.gethostname()
+if not os.getenv("API_KEY") and not os.path.isfile(".env"):
+    logger.error(
+        "Please ensure you have environment variable API_KEY, or a .env file for it."
+    )
+    sys.exit(1)
 settings = Settings()
 app = FastAPI()
 
@@ -87,7 +92,8 @@ def resolve_names(targets: List[str]):
         logger.error(str(e))
         return
 
-    # Note that even if the DNS record is a cname, uncover will give us the a records for that cname
+    # Note that even if the DNS record is a cname,
+    # uncover will give us the a records for that cname
     objects_with_a_records = [o for o in objects if "a" in o]
     ip_to_hosts = {value: o["host"] for o in objects_with_a_records for value in o["a"]}
     all_ips += ip_to_hosts.keys()
@@ -97,7 +103,8 @@ def resolve_names(targets: List[str]):
 def post_to_hec(url, token, json_payload, sourcetype, source, verify):
     """
     send to HEC - JSON-formatted rather than raw
-    this means the url should end with `/services/collector/event` rather than '.../_raw'
+    this means the url should end with `/services/collector/event`
+    rather than '.../_raw'
     it means our payload must be inside of an "event" field and we can provide metadata
     """
     headers = {"Authorization": token}
@@ -127,7 +134,10 @@ def do_discovery(
     callback_verify,
 ):
     logger.info(
-        f"entity: {entity}, tool: {process_args[0]}, len(target_list): {len(target_list)}"
+        "entity: {}, tool: {}, len(target_list): {}",
+        entity,
+        process_args[0],
+        len(target_list),
     )
 
     uid = str(uuid.uuid4())
@@ -143,7 +153,8 @@ def do_discovery(
         resolved_names, all_ips = resolve_names(target_list)
         target_list = all_ips
 
-    # Old approach - send lists in as stdin, which didn't seem to work well for httpx -screenshot
+    # Old approach - send lists in as stdin,
+    # which didn't seem to work well for httpx -screenshot
     # result = subprocess.run(
     #     process_args,
     #     capture_output=True,
@@ -164,7 +175,8 @@ def do_discovery(
         # Parse the lines of text output into json objects
         objects = []
         if process_args[0] == "uncover":
-            # uncover -json isn't working so let's convert the semicolon-delimited output to json
+            # uncover -json isn't working so let's convert the
+            # semicolon-delimited output to json
             header = ["ip", "port", "hostname"]
             objects = [
                 dict(zip(header, line.split(":")))
@@ -224,7 +236,7 @@ def do_discovery(
             if "time" in o:
                 o["time"] = re.sub(pattern="ms$", repl="", string=o["time"])
                 if o["time"].endswith("s"):
-                    o["time"] = str(float(o["time"].replace('s', '')) * 1000)
+                    o["time"] = str(float(o["time"].replace("s", "")) * 1000)
                 o["time"] = str(round(float(o["time"]), 2))
 
             if "stored_response_path" in o:

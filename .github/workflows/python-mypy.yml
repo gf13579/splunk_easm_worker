@@ -1,0 +1,26 @@
+---
+name: Python Linting - mypy
+
+"on":
+  push:
+    branches:
+      - main  # Set a branch to deploy
+  pull_request:
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+      - name: Set up Python 3.11.3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11.3'
+      - name: Running mypy
+        run: |
+          python --version
+          pip install -r api/requirements.txt
+          pip install mypy types-requests
+          mypy api/*.py

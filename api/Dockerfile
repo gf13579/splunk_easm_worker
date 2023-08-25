@@ -43,9 +43,10 @@ WORKDIR /app/
 # FROM python:3.10.12-alpine
 # FROM alpine:latest
 FROM python:3.11.3
-RUN apt update
+EXPOSE 8000
+RUN apt-get update
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN apt install ./google-chrome-stable_current_amd64.deb -y
+RUN apt install -f -y ./google-chrome-stable_current_amd64.deb
 COPY --from=builder /app/httpx/httpx /usr/local/bin/
 COPY --from=builder /app/subfinder/v2/subfinder /usr/local/bin/
 COPY --from=builder /app/dnsx/dnsx /usr/local/bin/
@@ -56,5 +57,5 @@ COPY ./subfinder-provider-config.yaml /root/.config/subfinder/provider-config.ya
 WORKDIR /code
 COPY ./requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-COPY ./ /code/app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+COPY ./ /code/api
+CMD ["uvicorn", "api.__main__:app", "--host", "0.0.0.0", "--port", "80"]
