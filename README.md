@@ -22,7 +22,9 @@ The EASM Worker is a REST API wrapper around open-source recon tools from [Proje
 
 ## Deployment
 
-Use the docker files to stand up an instance of the worker.
+Use Docker to stand up an instance of the worker and configure the Splunk App for EASM to communicate with the worker, via a reverse proxy or API gateway handling TLS.
+
+![Architecture](https://github.com/gf13579/splunk_easm_worker/blob/main/documentation/easm_worker_architecture_dark_mode.png?raw=true)
 
 You'll need to define an arbitrary API key as an environment variable - or in .env (see below). You'll also need to ensure there's a a reverse-proxy/API gateway handling HTTPS (TLS) termination in front of the worker.
 
