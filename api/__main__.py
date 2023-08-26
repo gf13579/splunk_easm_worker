@@ -424,7 +424,7 @@ async def web_tech_scan(
                 "metatag-cms,ssl-dns-names,waf-detect,ssl-issuer,"
                 "http-missing-security-headers,tls-version,tech-detect"
                 ",dns-waf-detect,azure-domain-tenant,mx-service-detector,ms-fingerprint"
-                ",wordpress-detect,robots-txt-endpoint"
+                ",wordpress-detect,robots-txt-endpoint,s3-detect"
             ),
         ],
         target_list=discovery_params.target_list,

@@ -1,0 +1,3 @@
+your_fqdn.something.some.tld
+
+reverse_proxy http://api:8000
