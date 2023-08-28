@@ -1,5 +1,5 @@
 resume.cfg
-api/subfinder-provider-config.yaml
+# api/subfinder-provider-config.yaml
 worker/dnsx
 worker/httpx
 worker/subfinder
