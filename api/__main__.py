@@ -151,7 +151,7 @@ def do_discovery(
     resolved_names = []
     if process_args[0] == "uncover":
         resolved_names, all_ips = resolve_names(target_list)
-        target_list = all_ips
+        target_list = list(set(all_ips))
 
     # Old approach - send lists in as stdin,
     # which didn't seem to work well for httpx -screenshot
@@ -182,6 +182,8 @@ def do_discovery(
                 dict(zip(header, line.split(":")))
                 for line in result.stdout.strip().splitlines()
             ]
+            # consolidate all the hostnames
+            objects = [{"ip": objects[0]['ip'], "port": objects[0]['port'], "hostname": ','.join([o["hostname"] for o in objects])}]
         else:
             # parse as json
             try:
@@ -354,7 +356,7 @@ async def openport_active_discovery(
 async def http_discovery(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
 ):
-    process_args = ["httpx", "-json", "-tech-detect", "-silent", "-timeout", "15"]
+    process_args = ["httpx", "-json", "-tech-detect", "-silent", "-favivcon", "-timeout", "15"]
 
     if discovery_params.take_screenshots:
         process_args.extend(["-screenshot", "-system-chrome"])
