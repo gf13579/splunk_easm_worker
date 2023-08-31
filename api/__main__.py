@@ -199,7 +199,9 @@ def do_discovery(
                 ]
             except Exception as e:
                 logger.error(str(e))
-                logger.error("len of stdout is :" + str(result.stdout.strip().splitlines()))
+                logger.error(
+                    "len of stdout is :" + str(result.stdout.strip().splitlines())
+                )
                 logger.error(str(result.stdout.strip().splitlines()))
                 return
 
