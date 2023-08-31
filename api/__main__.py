@@ -183,7 +183,14 @@ def do_discovery(
                 for line in result.stdout.strip().splitlines()
             ]
             # consolidate all the hostnames
-            objects = [{"ip": objects[0]['ip'], "port": objects[0]['port'], "hostname": ','.join([o["hostname"] for o in objects])}]
+            # TO DO - add `if len(objects):`
+            objects = [
+                {
+                    "ip": objects[0]["ip"],
+                    "port": objects[0]["port"],
+                    "hostname": ",".join([o["hostname"] for o in objects]),
+                }
+            ]
         else:
             # parse as json
             try:
@@ -192,6 +199,8 @@ def do_discovery(
                 ]
             except Exception as e:
                 logger.error(str(e))
+                logger.error("len of stdout is :" + str(result.stdout.strip().splitlines()))
+                logger.error(str(result.stdout.strip().splitlines()))
                 return
 
         logger.info(
@@ -356,7 +365,15 @@ async def openport_active_discovery(
 async def http_discovery(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
 ):
-    process_args = ["httpx", "-json", "-tech-detect", "-silent", "-favivcon", "-timeout", "15"]
+    process_args = [
+        "httpx",
+        "-json",
+        "-tech-detect",
+        "-silent",
+        "-favicon",
+        "-timeout",
+        "15",
+    ]
 
     if discovery_params.take_screenshots:
         process_args.extend(["-screenshot", "-system-chrome"])
