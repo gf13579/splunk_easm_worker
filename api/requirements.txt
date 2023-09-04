@@ -2,7 +2,7 @@ annotated-types==0.5.0
 anyio==3.7.1
 certifi==2023.7.22
 charset-normalizer==3.2.0
-click==8.1.4
+click==8.1.7
 fastapi==0.101.1
 h11==0.14.0
 httptools==0.6.0
