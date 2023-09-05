@@ -5,7 +5,7 @@ services:
 
   api:
     build: ./api
-    command: uvicorn app.main:app --host 0.0.0.0
+    command: uvicorn api.__main__:app --host 0.0.0.0
     expose:
       - 8000:8000
     # Expose ports to the host - not necessary if proxying by another service i.e. caddy
