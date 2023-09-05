@@ -7,6 +7,7 @@ RUN git clone https://github.com/projectdiscovery/httpx.git
 RUN git clone https://github.com/projectdiscovery/subfinder.git
 RUN git clone https://github.com/projectdiscovery/dnsx.git
 RUN git clone https://github.com/projectdiscovery/uncover.git
+RUN git clone https://github.com/projectdiscovery/tlsx.git
 # RUN git clone https://github.com/projectdiscovery/katana.git
 RUN wget https://github.com/projectdiscovery/katana/releases/download/v1.0.3/katana_1.0.3_linux_amd64.zip && unzip katana_1.0.3_linux_amd64.zip
 
@@ -30,6 +31,11 @@ WORKDIR /app/uncover
 RUN go mod download
 RUN go build ./cmd/uncover
 
+# tlsx
+WORKDIR /app/tlsx
+RUN go mod download
+RUN go build ./cmd/tlsx
+
 # 2023-08-20: Commented-out as this is currently broken
 # Instead, we just wget a specific recent release of katana
 # katana
@@ -52,6 +58,7 @@ COPY --from=builder /app/subfinder/v2/subfinder /usr/local/bin/
 COPY --from=builder /app/dnsx/dnsx /usr/local/bin/
 COPY --from=builder /app/uncover/uncover /usr/local/bin/
 COPY --from=builder /app/katana /usr/local/bin/
+COPY --from=builder /app/tlsx /usr/local/bin/
 COPY ./subfinder-provider-config.yaml /root/.config/subfinder/provider-config.yaml
 
 WORKDIR /code
