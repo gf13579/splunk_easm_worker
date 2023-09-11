@@ -183,14 +183,14 @@ def do_discovery(
                 for line in result.stdout.strip().splitlines()
             ]
             # consolidate all the hostnames
-            # TO DO - add `if len(objects):`
-            objects = [
-                {
-                    "ip": objects[0]["ip"],
-                    "port": objects[0]["port"],
-                    "hostname": ",".join([o["hostname"] for o in objects]),
-                }
-            ]
+            if len(objects):
+                objects = [
+                    {
+                        "ip": objects[0]["ip"],
+                        "port": objects[0]["port"],
+                        "hostname": ",".join([o["hostname"] for o in objects]),
+                    }
+                ]
         else:
             # parse as json
             try:
