@@ -1,21 +1,23 @@
-from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException, status
-from pydantic import BaseModel
-from typing import List
-from fastapi.security import OAuth2PasswordBearer
-from .config import Settings
-from loguru import logger
-
-import subprocess
-import requests
-import json
-import socket
-import sys
-import re
-import urllib3
-import os
-import hashlib
-import uuid
 import datetime
+import hashlib
+import json
+import os
+import re
+import requests
+import socket
+import subprocess
+import sys
+from typing import Any, Dict, List, Optional, Tuple
+import urllib3
+from . import fix_hec_url
+import uuid
+
+from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from loguru import logger
+from pydantic import BaseModel
+from .config import Settings
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -29,14 +31,16 @@ logger.add(sink=sys.stderr, level="INFO")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # use token authentication
 
 
-def api_key_auth(api_key: str = Depends(oauth2_scheme)):
+def api_key_auth(api_key: str = Depends(oauth2_scheme)) -> None:
     if api_key != settings.api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Forbidden"
         )
 
 
-def filter_dict(input_dict, fields_to_keep):
+def filter_dict(
+    input_dict: Dict[str, Any], fields_to_keep: List[str]
+) -> Dict[str, Any]:
     return {field: input_dict[field] for field in fields_to_keep if field in input_dict}
 
 
@@ -53,13 +57,14 @@ app = FastAPI()
 class DiscoveryParams(BaseModel):
     entity: str
     callback_url: str
-    callback_auth: str | None = None
+    callback_auth: str | None = "None"
     callback_verify: bool = True
     target_list: List[str]
     take_screenshots: bool = False
 
 
-def contains_special_characters(strings_list):
+def contains_special_characters(strings_list: List[str]) -> List[str]:
+    """does the list of strings contain any special characters?"""
     special_characters = {";", "|", "&"}
     return [
         string
@@ -68,7 +73,7 @@ def contains_special_characters(strings_list):
     ]
 
 
-def resolve_names(targets: List[str]):
+def resolve_names(targets: List[str]) -> Tuple[Dict[str, str], List[str]]:
     process_args = ["dnsx", "-json", "-silent"]
     targets_to_resolve = []
     all_ips = []
@@ -90,7 +95,7 @@ def resolve_names(targets: List[str]):
         objects = [json.loads(line) for line in result.stdout.strip().splitlines()]
     except Exception as e:
         logger.error(str(e))
-        return
+        return {}, []
 
     # Note that even if the DNS record is a cname,
     # uncover will give us the a records for that cname
@@ -100,13 +105,26 @@ def resolve_names(targets: List[str]):
     return ip_to_hosts, all_ips
 
 
-def post_to_hec(url, token, json_payload, sourcetype, source, verify):
+def post_to_hec(
+    url: str,
+    token: Optional[str],
+    json_payload: Dict[str, Any],
+    sourcetype: str,
+    source: str,
+    verify: bool,
+) -> int:
     """
     send to HEC - JSON-formatted rather than raw
     this means the url should end with `/services/collector/event`
     rather than '.../_raw'
     it means our payload must be inside of an "event" field and we can provide metadata
     """
+    url = fix_hec_url(url)
+
+    if token is None and not os.getenv("HEC_WORKS_WITHOUT_TOKEN"):
+        logger.warning("No token provided. Sending to HEC is likely to fail.")
+    if token is None:
+        token = ""
     headers = {"Authorization": token}
 
     response = requests.post(
@@ -125,14 +143,14 @@ def post_to_hec(url, token, json_payload, sourcetype, source, verify):
 
 
 def do_discovery(
-    entity,
-    process_args,
-    target_list,
-    sourcetype,
-    callback_url,
-    callback_auth,
-    callback_verify,
-):
+    entity: str,
+    process_args: List[str],
+    target_list: List[str],
+    sourcetype: str,
+    callback_url: str,
+    callback_auth: Optional[str],
+    callback_verify: bool,
+) -> None:
     logger.info(
         "entity: {}, tool: {}, len(target_list): {}",
         entity,
@@ -148,7 +166,7 @@ def do_discovery(
 
     # Build an ip->hostname mapping if we need to do passive port discovery
     # We'll later use this to stamp results with the original hostname
-    resolved_names = []
+    resolved_names: Dict[str, str] = {}
     if process_args[0] == "uncover":
         resolved_names, all_ips = resolve_names(target_list)
         target_list = list(set(all_ips))
@@ -165,15 +183,22 @@ def do_discovery(
     status_code = None
 
     for target in target_list:
-        result = subprocess.run(
-            process_args,
-            capture_output=True,
-            text=True,
-            input=target,
-        )
+        try:
+            result = subprocess.run(
+                process_args,
+                capture_output=True,
+                text=True,
+                input=target,
+            )
+        except Exception as error:
+            logger.error(
+                "Failed to run discovery task '{}' due to {}",
+                " ".join(process_args),
+                error,
+            )
 
         # Parse the lines of text output into json objects
-        objects = []
+        objects: List[Dict[str, Any]] = []
         if process_args[0] == "uncover":
             # uncover -json isn't working so let's convert the
             # semicolon-delimited output to json
@@ -289,7 +314,7 @@ def do_discovery(
 @app.post("/discovery/subdomains/", dependencies=[Depends(api_key_auth)])
 async def sub_discovery(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     background_tasks.add_task(
         do_discovery,
         entity=discovery_params.entity,
@@ -314,7 +339,7 @@ async def sub_discovery(
 @app.post("/discovery/open_ports/", dependencies=[Depends(api_key_auth)])
 async def openport_passive_discovery(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     background_tasks.add_task(
         do_discovery,
         entity=discovery_params.entity,
@@ -349,7 +374,7 @@ async def openport_passive_discovery(
 @app.post("/discovery/open_ports_scan/", dependencies=[Depends(api_key_auth)])
 async def openport_active_discovery(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     background_tasks.add_task(
         do_discovery,
         entity=discovery_params.entity,
@@ -366,7 +391,7 @@ async def openport_active_discovery(
 @app.post("/discovery/http_services/", dependencies=[Depends(api_key_auth)])
 async def http_discovery(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     process_args = [
         "httpx",
         "-json",
@@ -397,7 +422,7 @@ async def http_discovery(
 @app.post("/discovery/dns_records/", dependencies=[Depends(api_key_auth)])
 async def dns_discovery(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     background_tasks.add_task(
         do_discovery,
         entity=discovery_params.entity,
@@ -414,7 +439,7 @@ async def dns_discovery(
 @app.post("/discovery/tls_certs/", dependencies=[Depends(api_key_auth)])
 async def cert_parse(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     background_tasks.add_task(
         do_discovery,
         entity=discovery_params.entity,
@@ -431,7 +456,7 @@ async def cert_parse(
 @app.post("/discovery/web_tech/", dependencies=[Depends(api_key_auth)])
 async def web_tech_scan(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     background_tasks.add_task(
         do_discovery,
         entity=discovery_params.entity,
@@ -460,7 +485,7 @@ async def web_tech_scan(
 @app.post("/discovery/web_vuln_scan/", dependencies=[Depends(api_key_auth)])
 async def web_vuln_scan(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     background_tasks.add_task(
         do_discovery,
         entity=discovery_params.entity,
@@ -482,7 +507,7 @@ async def web_vuln_scan(
 @app.post("/discovery/web_spider/", dependencies=[Depends(api_key_auth)])
 async def web_spider(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
-):
+) -> Dict[str, str]:
     background_tasks.add_task(
         do_discovery,
         entity=discovery_params.entity,

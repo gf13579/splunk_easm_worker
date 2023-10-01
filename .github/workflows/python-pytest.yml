@@ -23,4 +23,4 @@ jobs:
           python --version
           pip install -r api/requirements.txt
           pip install -r api/requirements_dev.txt
-          mypy api/*.py
+          pytest
