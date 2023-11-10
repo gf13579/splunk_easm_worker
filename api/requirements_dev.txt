@@ -1,0 +1,6 @@
+mypy
+ruff
+black
+pytest
+types-requests
+types-urllib3

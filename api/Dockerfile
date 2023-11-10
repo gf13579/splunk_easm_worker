@@ -51,14 +51,16 @@ WORKDIR /app/
 FROM python:3.11.3
 EXPOSE 8000
 RUN apt-get update
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN apt install -f -y ./google-chrome-stable_current_amd64.deb
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && apt install -f -y ./google-chrome-stable_current_amd64.deb && rm *.deb && apt-get clean
+
 COPY --from=builder /app/httpx/httpx /usr/local/bin/
 COPY --from=builder /app/subfinder/v2/subfinder /usr/local/bin/
 COPY --from=builder /app/dnsx/dnsx /usr/local/bin/
 COPY --from=builder /app/uncover/uncover /usr/local/bin/
 COPY --from=builder /app/katana /usr/local/bin/
 COPY --from=builder /app/tlsx /usr/local/bin/
+RUN chmod +x /usr/local/bin/*
+
 COPY ./subfinder-provider-config.yaml /root/.config/subfinder/provider-config.yaml
 
 WORKDIR /code
