@@ -171,3 +171,4 @@ cython_debug/
 
 *.db
 .vscode/settings.json
+.DS_Store
