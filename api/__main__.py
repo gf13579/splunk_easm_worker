@@ -208,14 +208,40 @@ def do_discovery(
                 for line in result.stdout.strip().splitlines()
             ]
             # consolidate all the hostnames
-            # TO DO - add `if len(objects):`
-            objects = [
+
+            # if len(objects):
+            #     objects = [
+            #         {
+            #             "ip": objects[0]["ip"],
+            #             "port": objects[0]["port"],
+            #             "hostname": ",".join([o["hostname"] for o in objects]),
+            #         }
+            #     ]
+
+            # Dictionary to consolidate values by ip and port
+            consolidated_dict = {}
+
+            for obj in objects:
+                key = (obj["ip"], obj["port"])
+                if key not in consolidated_dict:
+                    consolidated_dict[key] = {
+                        "ip": obj["ip"],
+                        "port": obj["port"],
+                        "hostnames": [],
+                    }
+                consolidated_dict[key]["hostnames"].append(obj["hostname"])
+
+            # Creating the objects_consolidated list
+            objects_consolidated = [
                 {
-                    "ip": objects[0]["ip"],
-                    "port": objects[0]["port"],
-                    "hostname": ",".join([o["hostname"] for o in objects]),
+                    "ip": data["ip"],
+                    "port": data["port"],
+                    "hostname": ", ".join(data["hostnames"]),
                 }
+                for data in consolidated_dict.values()
             ]
+            objects = objects_consolidated
+
         else:
             # parse as json
             try:
@@ -392,6 +418,7 @@ async def openport_active_discovery(
 async def http_discovery(
     discovery_params: DiscoveryParams, background_tasks: BackgroundTasks
 ) -> Dict[str, str]:
+
     process_args = [
         "httpx",
         "-json",

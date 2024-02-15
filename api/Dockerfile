@@ -59,7 +59,6 @@ COPY --from=builder /app/dnsx/dnsx /usr/local/bin/
 COPY --from=builder /app/uncover/uncover /usr/local/bin/
 COPY --from=builder /app/katana /usr/local/bin/
 COPY --from=builder /app/tlsx /usr/local/bin/
-RUN chmod +x /usr/local/bin/*
 
 COPY ./subfinder-provider-config.yaml /root/.config/subfinder/provider-config.yaml
 
